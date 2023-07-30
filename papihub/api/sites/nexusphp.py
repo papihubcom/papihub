@@ -244,8 +244,9 @@ class NexusPhp(TorrentSite, Auth):
                     'password': password
                 })
             if res.url.path.startswith('/index') and res.history:
-                self._set_auth_cookies(res.history[-1].headers.get('Set-Cookie'))
-                return res.headers.get('Set-Cookie')
+                cookies_str = res.history[-1].headers.get('Set-Cookie')
+                self._set_auth_cookies(cookies_str)
+                return cookies_str
             else:
                 raise NotAuthenticatedException(self.parser_config.site_id, self.parser_config.site_name,
                                                 f'{self.parser_config.site_name}登录失败，用户名或密码错误')
