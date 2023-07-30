@@ -1,1 +1,4 @@
+PyYAML
+Jinja2
+httpx
 pyquery==2.0.0

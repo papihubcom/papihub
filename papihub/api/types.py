@@ -5,6 +5,13 @@ from typing import Optional
 
 
 @dataclass
+class ApiOptions:
+    request_timeout: Optional[int] = None
+    proxies: Optional[str] = None
+    user_agent: Optional[str] = None
+
+
+@dataclass
 class TorrentSiteUser:
     uid: Optional[int] = 0
     username: Optional[str] = 'unknown'
@@ -57,7 +64,7 @@ class Torrent:
     # 种子关联的imdbid
     imdb_id: Optional[str] = None
     # 种子发布时间
-    publish_date: Optional[datetime] = None
+    publish_date: Optional[datetime.datetime] = None
     # 种子大小，转化为mb尺寸
     size_mb: Optional[float] = None
     # 做种人数
@@ -67,7 +74,7 @@ class Torrent:
     # 下载完成人数
     download_count: Optional[int] = None
     # 免费截止时间
-    free_deadline: Optional[datetime] = None
+    free_deadline: Optional[datetime.datetime] = None
     # 下载折扣，1为不免费
     download_volume_factor: Optional[float] = None
     # 做种上传系数，1为正常
@@ -86,4 +93,4 @@ class TorrentDetail:
     download_url: Optional[str] = None
     filename: Optional[str] = None
     intro: Optional[str] = None
-    publish_date: Optional[datetime] = None
+    publish_date: Optional[datetime.datetime] = None

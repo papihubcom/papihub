@@ -2,11 +2,11 @@ from abc import ABCMeta, abstractmethod
 from typing import List, Optional
 
 from papihub.api.types import Torrent, TorrentDetail, TorrentSiteUser
+from papihub.config.types import TorrentSiteParserConfig
 
 
 class TorrentSite(metaclass=ABCMeta):
-    def __init(self):
-        pass
+    parser_config: TorrentSiteParserConfig
 
     @abstractmethod
     async def list(self, timeout=None, cate_level1_list=None) -> List[Torrent]:
@@ -19,12 +19,12 @@ class TorrentSite(metaclass=ABCMeta):
     @abstractmethod
     async def search(
             self,
-            keyword=None,
-            imdb_id=None,
+            keyword: Optional[str] = None,
+            imdb_id: Optional[str] = None,
             cate_level1_list: Optional[List] = None,
             free: Optional[bool] = False,
             page: Optional[int] = None,
-            timeout=None
+            timeout: Optional[int] = None
     ) -> List[Torrent]:
         pass
 

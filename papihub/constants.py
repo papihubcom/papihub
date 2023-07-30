@@ -9,5 +9,5 @@ ALL_CATE_LEVEL1 = [CateLevel1.Movie,
                    CateLevel1.Game,
                    CateLevel1.Other]
 BASE_HEADERS = {
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36'
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
 }
