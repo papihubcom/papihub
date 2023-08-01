@@ -1,13 +1,39 @@
+import logging.config
+
+from papihub.common.logging import LOGGING_CONFIG
+
+logging.config.dictConfig(LOGGING_CONFIG)
+import httpx
+import uvicorn
 from fastapi import FastAPI
 
+from papihub.common.response import json_200, json_500
+from papihub.routers import torrents
+
+log = logging.getLogger(__name__)
+
 app = FastAPI()
+
+app.include_router(torrents.router)
 
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return json_200(message='papihub server')
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+@app.exception_handler(httpx.HTTPStatusError)
+async def http_status_exception_handler(request, e: httpx.HTTPStatusError):
+    msg = e.response.json().get('error', {}).get('message')
+    log.error('http status exception: ' + msg, exc_info=True)
+    return json_500(message=msg)
+
+
+@app.exception_handler(Exception)
+async def universal_exception_handler(request, exc):
+    log.error('universal_exception_handler', exc_info=True)
+    return json_500(message=str(exc))
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

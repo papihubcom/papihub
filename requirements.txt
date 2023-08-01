@@ -1,3 +1,4 @@
+uvicorn[standard]
 PyYAML
 Jinja2
 httpx
