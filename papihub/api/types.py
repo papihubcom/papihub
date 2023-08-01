@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from papihub import utils
+from papihub.utils import trans_size_str_to_mb
+
 
 @dataclass
 class ApiOptions:
@@ -22,6 +25,38 @@ class TorrentSiteUser:
     seeding: Optional[int] = 0
     leeching: Optional[int] = 0
     vip_group: Optional[bool] = False
+
+    @staticmethod
+    def from_data(result: dict) -> Optional["TorrentSiteUser"]:
+        if not result:
+            return None
+        user = TorrentSiteUser()
+        user.uid = int(result['uid'])
+        user.username = result['username']
+        user.user_group = result['user_group']
+        user.uploaded = trans_size_str_to_mb(str(result['uploaded']))
+        user.downloaded = trans_size_str_to_mb(str(result['downloaded']))
+        try:
+            user.seeding = int(result['seeding'])
+        except Exception as e:
+            user.seeding = 0
+        try:
+            user.leeching = int(result['leeching'])
+        except Exception as e:
+            user.leeching = 0
+        try:
+            if 'share_ratio' in result:
+                ss = result['share_ratio'].replace(',', '')
+                user.share_ratio = float(ss)
+            else:
+                if not user.downloaded:
+                    user.share_ratio = float('inf')
+                else:
+                    user.share_ratio = round(user.uploaded / user.downloaded, 2)
+        except Exception as e:
+            user.share_ratio = 0.0
+        user.vip_group = result['vip_group']
+        return user
 
 
 @dataclass

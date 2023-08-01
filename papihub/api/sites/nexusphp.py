@@ -1,7 +1,9 @@
+import datetime
 from http.cookies import SimpleCookie
 from typing import Optional, List, Dict
 
 import httpx
+from cssselect import SelectorSyntaxError
 from httpx import Timeout
 from jinja2 import Template
 from pyquery import PyQuery
@@ -11,8 +13,9 @@ from papihub.api.auth import Auth
 from papihub.api.torrentsite import TorrentSite
 from papihub.api.types import TorrentDetail, Torrent, TorrentSiteUser, ApiOptions, CateLevel1
 from papihub.config.types import TorrentSiteParserConfig
-from papihub.constants import BASE_HEADERS
-from papihub.exceptions import NotAuthenticatedException
+from papihub.constants import BASE_HEADERS, ALL_CATE_LEVEL1
+from papihub.exceptions import NotAuthenticatedException, ParserException
+from papihub.parser.htmlparser import HtmlParser
 
 DEFAULT_LOGIN_PATH = '/takelogin.php'
 
@@ -25,6 +28,7 @@ class NexusPhp(TorrentSite, Auth):
     """
     auth_cookies: Optional[Dict[str, str]] = None
     auth_headers: Optional[Dict[str, str]] = None
+    _user: Optional[TorrentSiteUser] = None
     _search_paths: List
     _search_query: Dict
 
@@ -251,11 +255,133 @@ class NexusPhp(TorrentSite, Auth):
                 raise NotAuthenticatedException(self.parser_config.site_id, self.parser_config.site_name,
                                                 f'{self.parser_config.site_name}登录失败，用户名或密码错误')
 
-    async def list(self, timeout=None, cate_level1_list=None) -> List[Torrent]:
-        pass
+    def _parse_user(self, pq: PyQuery) -> Optional[TorrentSiteUser]:
+        try:
+            item_tag = pq(self.parser_config.user.get('item')['selector'])
+            result = HtmlParser.parse_item_fields(item_tag, self.parser_config.user.get('fields'))
+            return TorrentSiteUser.from_data(result)
+        except SelectorSyntaxError as e:
+            raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
+                                  f"{self.parser_config.site_name}解析用户信息使用了错误的CSS选择器：{str(e)}")
+        except Exception as e:
+            raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
+                                  f"{self.parser_config.site_name}解析用户信息出现错误：{str(e)}")
+
+    def _copy_to_torrent(self, item: dict) -> Optional[Torrent]:
+        """
+        把按css选择器解析出来的种子数据，标准化成Torrent对象
+        """
+        if not item:
+            return None
+        t = Torrent()
+        t.site_id = self.parser_config.site_id
+        t.id = utils.parse_value(str, item.get('id'))
+        t.name = utils.parse_value(str, item.get('title'))
+        t.subject = utils.parse_value(str, item.get('description'))
+        if t.subject:
+            t.subject = t.subject.strip()
+        t.free_deadline = item.get('free_deadline')
+        t.imdb_id = item.get('imdbid')
+        t.upload_count = utils.parse_value(int, item.get('seeders'), 0)
+        t.downloading_count = utils.parse_value(int, item.get('leechers'), 0)
+        t.download_count = utils.parse_value(int, item.get('grabs'), 0)
+        t.download_url = item.get('download')
+        if t.download_url and not t.download_url.startswith('http') and not t.download_url.startswith('magnet'):
+            t.download_url = self.parser_config.domain + t.download_url
+        t.publish_date = utils.parse_value(datetime.datetime, item.get('date'), datetime.datetime.now())
+        t.cate_id = utils.parse_value(str, item.get('category'))
+        for c in self.parser_config.category_mappings:
+            cid = t.cate_id
+            id_mapping = self.parser_config.category_id_mapping
+            if id_mapping:
+                for mid in id_mapping:
+                    if str(mid.get('id')) == str(cid):
+                        if isinstance(mid.get('mapping'), list):
+                            cid = mid.get('mapping')[0]
+                        else:
+                            cid = mid.get('mapping')
+            if str(c.get('id')) == str(cid):
+                t.cate_level1 = CateLevel1.get_type(c.get('cate_level1'))
+        t.details_url = item.get('details')
+        if t.details_url:
+            t.details_url = self.parser_config.domain + t.details_url
+        t.download_volume_factor = utils.parse_value(float, item.get('downloadvolumefactor'), 1)
+        t.upload_volume_factor = utils.parse_value(float, item.get('uploadvolumefactor'), 1)
+        t.size_mb = utils.trans_size_str_to_mb(utils.parse_value(str, item.get('size'), '0'))
+        t.poster_url = item.get('poster')
+        t.minimum_ratio = utils.parse_value(float, item.get('minimumratio'), 0.0)
+        t.minimum_seed_time = utils.parse_value(int, item.get('minimumseedtime'), 0)
+        if t.poster_url:
+            if t.poster_url.startswith("./"):
+                t.poster_url = self.parser_config.domain + t.poster_url[2:]
+            elif not t.poster_url.startswith("http"):
+                t.poster_url = self.parser_config.domain + t.poster_url
+        return t
+
+    def _parse_torrents(self, pq: PyQuery, context: Dict) -> List[Torrent]:
+        list_rule = self.parser_config.torrents.get('list')
+        fields_rule = self.parser_config.torrents.get('fields')
+        if not fields_rule:
+            return []
+        try:
+            rows = pq(list_rule['selector'])
+            if not rows:
+                return []
+            result: List[Torrent] = []
+            for i in range(rows.length):
+                tag = rows.eq(i)
+                result.append(self._copy_to_torrent(HtmlParser.parse_item_fields(tag, fields_rule, context=context)))
+            return result
+        except SelectorSyntaxError as e:
+            raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
+                                  f"{self.parser_config.site_name}种子信息解析使用了错误的CSS选择器：{str(e)}")
+        except Exception as e:
+            raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
+                                  f"{self.parser_config.site_name}种子信息解析失败")
+
+    async def list(self, timeout: Optional[int] = None, cate_level1_list: Optional[List] = None, ) -> List[Torrent]:
+        if not timeout:
+            timeout = self.options.request_timeout
+        list_parser = self.parser_config.get_list
+        if list_parser:
+            async with httpx.AsyncClient(
+                    headers=self.auth_headers,
+                    cookies=self.auth_cookies,
+                    timeout=Timeout(timeout),
+                    proxies=self.options.proxies,
+                    follow_redirects=True,
+                    verify=False
+            ) as client:
+                url = f'{self.parser_config.domain}{list_parser.get("path")}'
+                r = await client.get(url)
+                text = self._get_response_text(r)
+                if not text:
+                    return []
+                pq = PyQuery(text)
+                if not self._user:
+                    self._user = self._parse_user(pq)
+                return self._parse_torrents(pq, context={'userinfo': self._user})
+        else:
+            return await self.search(cate_level1_list=cate_level1_list if cate_level1_list else ALL_CATE_LEVEL1,
+                                     timeout=timeout)
 
     async def get_user(self, refresh=False) -> Optional[TorrentSiteUser]:
-        pass
+        url = self.parser_config.user.get('path')
+        if not url:
+            return
+        async with httpx.AsyncClient(
+                headers=self.auth_headers,
+                cookies=self.auth_cookies,
+                http2=False,
+                timeout=Timeout(timeout=self.options.request_timeout),
+                proxies=self.options.proxies,
+                follow_redirects=True,
+                verify=False
+        ) as client:
+            r = await client.get(url)
+            text = self._get_response_text(r)
+            pq = PyQuery(text)
+            return self._parse_user(pq)
 
     async def search(self, keyword: Optional[str] = None,
                      imdb_id: Optional[str] = None,
@@ -281,7 +407,7 @@ class NexusPhp(TorrentSite, Auth):
             query_context['cates'] = []
         if page:
             query_context['page'] = page
-        search_result: List[Torrent] = []
+        total_torrents: List[Torrent] = []
         if not timeout:
             timeout = self.options.request_timeout
         for i, p in enumerate(paths):
@@ -309,11 +435,13 @@ class NexusPhp(TorrentSite, Auth):
                 text = self._get_response_text(res)
                 if not text:
                     continue
-                torrents = []
-                # todo parse torrent
+                pq = PyQuery(text)
+                if not self._user:
+                    self._user = self._parse_user(pq)
+                torrents = self._parse_torrents(pq, context={'userinfo': self._user})
                 if torrents:
-                    search_result += torrents
-        return search_result
+                    total_torrents += torrents
+        return total_torrents
 
     async def download_torrent(self, url, filepath):
         pass
