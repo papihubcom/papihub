@@ -339,6 +339,42 @@ class NexusPhp(TorrentSite, Auth):
             raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
                                   f"{self.parser_config.site_name}种子信息解析失败")
 
+    def _copy_torrent_detail(self, item):
+        if not item:
+            return
+        t = TorrentDetail()
+        t.site_id = self.parser_config.site_id
+        t.id = item.get_int('id', item.get_value('id'))
+        t.name = utils.parse_value(str, item.get('title'))
+        t.subject = utils.parse_value(str, item.get('description'))
+        if t.subject:
+            t.subject = t.subject.strip()
+        t.download_url = utils.parse_value(str, item.get('download'))
+        if t.download_url and not t.download_url.startswith('http'):
+            t.download_url = self.parser_config.domain + t.download_url
+        t.filename = item.get('filename')
+        t.intro = item.get('intro')
+        t.publish_date = item.get('date')
+        return t
+
+    def _parse_detail(self, pq: PyQuery) -> TorrentDetail:
+        detail_config = self.parser_config.get_detail
+        if not detail_config:
+            return
+        field_rule = detail_config.get('fields')
+        if not field_rule:
+            return
+        try:
+            item_tag = pq(detail_config.get('item')['selector'])
+            result = HtmlParser.parse_item_fields(item_tag, field_rule)
+            return self._copy_torrent_detail(result)
+        except SelectorSyntaxError as e:
+            raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
+                                  f"{self.parser_config.site_name}种子详情页解析使用了错误的CSS选择器：{str(e)}")
+        except Exception as e:
+            raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
+                                  f"{self.parser_config.site_name}种子详情页解析失败")
+
     async def list(self, timeout: Optional[int] = None, cate_level1_list: Optional[List] = None, ) -> List[Torrent]:
         if not timeout:
             timeout = self.options.request_timeout
@@ -447,4 +483,20 @@ class NexusPhp(TorrentSite, Auth):
         pass
 
     async def get_detail(self, url) -> Optional[TorrentDetail]:
-        pass
+        detail_config = self.parser_config.get_detail
+        if not detail_config:
+            return
+        async with httpx.AsyncClient(
+                headers=self.auth_headers,
+                cookies=self.auth_cookies,
+                timeout=Timeout(self.options.request_timeout),
+                proxies=self.options.proxies,
+                follow_redirects=True,
+                verify=False
+        ) as client:
+            r = await client.get(url)
+            text = self._get_response_text(r)
+            if not text:
+                return
+            pq = PyQuery(text)
+            return self._parse_detail(pq)

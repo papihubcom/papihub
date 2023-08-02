@@ -31,3 +31,4 @@ class TorrentSiteParserConfig(ParserConfig):
     get_list: Optional[Dict] = None
     # 标准种子解析配置
     torrents: Optional[Dict] = None
+    get_detail: Optional[Dict] = None

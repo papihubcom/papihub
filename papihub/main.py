@@ -1,4 +1,5 @@
 import logging.config
+import os
 
 from papihub.common.logging import LOGGING_CONFIG
 
@@ -6,11 +7,15 @@ logging.config.dictConfig(LOGGING_CONFIG)
 import httpx
 import uvicorn
 from fastapi import FastAPI
+from papihub.databases import create_all
 
 from papihub.common.response import json_200, json_500
 from papihub.routers import torrents
+from papihub.models import *
 
 log = logging.getLogger(__name__)
+
+create_all()
 
 app = FastAPI()
 
@@ -36,4 +41,4 @@ async def universal_exception_handler(request, exc):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=os.environ.get("WEB_PORT", 8000))
