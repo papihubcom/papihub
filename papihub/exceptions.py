@@ -6,6 +6,10 @@ class ParserException(PapiHubException):
     pass
 
 
+class NotFoundParserException(ParserException):
+    pass
+
+
 class ParserFieldException(ParserException):
     def __init__(self, field_name: str, *args):
         super().__init__(*args)

@@ -3,7 +3,7 @@ from typing import Optional, List
 from papihub.databases import *
 
 
-class CookieStore(BaseDBModel):
+class CookieStoreModel(BaseDBModel):
     """
     存储站点用的一些Cookie
     """

@@ -10,7 +10,8 @@ from fastapi import FastAPI
 from papihub.databases import create_all
 
 from papihub.common.response import json_200, json_500
-from papihub.routers import torrents
+from papihub.routers import torrentsroute
+from papihub.routers import siteroute
 from papihub.models import *
 
 log = logging.getLogger(__name__)
@@ -19,7 +20,8 @@ create_all()
 
 app = FastAPI()
 
-app.include_router(torrents.router)
+app.include_router(torrentsroute.router)
+app.include_router(siteroute.router)
 
 
 @app.get("/")
