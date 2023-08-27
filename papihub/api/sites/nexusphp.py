@@ -15,7 +15,7 @@ from papihub.api.types import TorrentDetail, Torrent, TorrentSiteUser, ApiOption
 from papihub.config.types import TorrentSiteParserConfig
 from papihub.constants import BASE_HEADERS, ALL_CATE_LEVEL1
 from papihub.exceptions import NotAuthenticatedException, ParserException
-from papihub.parser.htmlparser import HtmlParser
+from papihub.api.parser import HtmlParser
 
 DEFAULT_LOGIN_PATH = '/takelogin.php'
 

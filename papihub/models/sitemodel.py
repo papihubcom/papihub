@@ -11,20 +11,30 @@ class AuthType(Enum):
     Cookies = 'cookies'
     UserAuth = 'user_auth'
 
+    @staticmethod
+    def from_str(value: str):
+        if value == 'cookies':
+            return AuthType.Cookies
+        elif value == 'user_auth':
+            return AuthType.UserAuth
+        else:
+            raise NotImplementedError
 
-@dataclass
+
 @dataclass_json
+@dataclass
 class AuthConfig:
-    auth_type: Optional[AuthType] = None
     user_agent: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class CookieAuthConfig(AuthConfig):
     cookies: Optional[str] = None
 
 
 @dataclass
+@dataclass_json
 class UserAuthConfig(AuthConfig):
     username: Optional[str] = None
     password: Optional[str] = None

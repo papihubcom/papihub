@@ -1,14 +1,17 @@
-from typing import Dict
-
 from papihub.config.siteparserconfigloader import SiteParserConfigLoader
-from papihub.config.types import ParserConfig
 from papihub.exceptions import NotFoundParserException
+from papihub.signals import site_init_signal
 from papihub.models.sitemodel import AuthType, AuthConfig, SiteModel, SiteStatus
 
 
 class SiteManager:
-    def __init__(self, parser_config: Dict[str, ParserConfig]):
-        self.parser_config = parser_config
+    """
+    站点管理器
+    """
+
+    def __init__(self, site_parser_config_loader: SiteParserConfigLoader):
+        self.site_parser_config_loader = site_parser_config_loader
+        self.parser_config = site_parser_config_loader.load()
 
     def add(self, site_id: str, auth_type: AuthType, auth_config: AuthConfig):
         if site_id not in self.parser_config:
@@ -25,4 +28,5 @@ class SiteManager:
             site_status=SiteStatus.Pending.value
         )
         site.save()
-        # todo 添加站点后，异步验证站点是否可用
+        # 发送站点初始化信号，异步做后续的处理
+        site_init_signal.send(site_id)
