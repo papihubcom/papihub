@@ -33,8 +33,8 @@ class CookieAuthConfig(AuthConfig):
     cookies: Optional[str] = None
 
 
-@dataclass
 @dataclass_json
+@dataclass
 class UserAuthConfig(AuthConfig):
     username: Optional[str] = None
     password: Optional[str] = None
@@ -59,3 +59,15 @@ class SiteModel(BaseDBModel):
     auth_config = Column(String, comment='站点认证配置', nullable=False)
     site_status = Column(String, comment='站点状态', nullable=False, default='pending')
     status_message = Column(String, comment='状态信息', nullable=True)
+
+    @staticmethod
+    def get_by_site_id(site_id: str) -> "SiteModel":
+        return SiteModel.query().filter(SiteModel.site_id == site_id).first()
+
+    @staticmethod
+    def update_status(site_id: str, status: SiteStatus, message: Optional[str] = None):
+        site = SiteModel.get_by_site_id(site_id)
+        if site:
+            site.site_status = status.value
+            site.status_message = message
+            site.update()

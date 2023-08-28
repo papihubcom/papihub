@@ -10,12 +10,12 @@ from pyquery import PyQuery
 
 from papihub import utils
 from papihub.api.auth import Auth
+from papihub.api.parser.htmlparser import HtmlParser
 from papihub.api.torrentsite import TorrentSite
 from papihub.api.types import TorrentDetail, Torrent, TorrentSiteUser, ApiOptions, CateLevel1
 from papihub.config.types import TorrentSiteParserConfig
 from papihub.constants import BASE_HEADERS, ALL_CATE_LEVEL1
 from papihub.exceptions import NotAuthenticatedException, ParserException
-from papihub.api.parser import HtmlParser
 
 DEFAULT_LOGIN_PATH = '/takelogin.php'
 
@@ -223,11 +223,11 @@ class NexusPhp(TorrentSite, Auth):
             return False
         return True
 
-    async def auth_with_cookies(self, cookies_str: str):
+    def auth_with_cookies(self, cookies_str: str):
         self._set_auth_cookies(cookies_str)
 
-    async def auth(self, username: str, password: str):
-        async with httpx.AsyncClient(
+    def auth(self, username: str, password: str):
+        with httpx.Client(
                 headers=self.auth_headers,
                 cookies=self.auth_cookies,
                 timeout=Timeout(self.options.request_timeout) if self.options else None,
@@ -241,9 +241,9 @@ class NexusPhp(TorrentSite, Auth):
                 login_path = f'{self.parser_config.domain}{DEFAULT_LOGIN_PATH}'
             login_method = self.parser_config.login.get('method') if self.parser_config.login else 'post'
             if login_method == 'get':
-                res = await client.get(f'{login_path}?username={username}&password={password}')
+                res = client.get(f'{login_path}?username={username}&password={password}')
             else:
-                res = await client.post(login_path, data={
+                res = client.post(login_path, data={
                     'username': username,
                     'password': password
                 })

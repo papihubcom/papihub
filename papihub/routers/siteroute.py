@@ -21,9 +21,9 @@ def add(param: AddParam):
     site_manager = inject.instance(SiteManager)
     auth_type = AuthType.from_str(param.auth_type)
     auth_config = None
-    if auth_type == AuthType.Cookies:
+    if auth_type is AuthType.Cookies:
         auth_config = CookieAuthConfig.from_dict(param.auth_config)
-    elif auth_type == AuthType.UserAuth:
+    elif auth_type is AuthType.UserAuth:
         auth_config = UserAuthConfig.from_dict(param.auth_config)
     site_manager.add(
         site_id=param.site_id,

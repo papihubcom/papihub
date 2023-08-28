@@ -1,8 +1,11 @@
 uvicorn[standard]
+fastapi
+SQLAlchemy
 PyYAML
 Jinja2
 httpx
 pyquery==2.0.0
 dataclasses-json
-blinker==1.6.2
 inject
+event-bus
+emoji==2.2.0

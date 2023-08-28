@@ -1,7 +1,9 @@
 import datetime
 import decimal
 import json
+from email.utils import parsedate_to_datetime
 from enum import Enum
+from http.cookies import SimpleCookie
 from typing import _GenericAlias, List, Union, Dict
 
 import emoji
@@ -168,3 +170,12 @@ def trans_unit_to_mb(size: float, unit: str) -> float:
         return round(size * 1024 * 1024 * 1024, 2)
     else:
         return size
+
+
+def parse_cookies_expire_time(cookie_str: str):
+    cookie = SimpleCookie()
+    cookie.load(cookie_str)
+    for key, morsel in cookie.items():
+        if morsel.get('expires'):
+            return parsedate_to_datetime(morsel['expires'])
+    return

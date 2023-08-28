@@ -1,7 +1,15 @@
-from papihub.signals import site_init_signal
+import logging
+
+import inject
+
+from papihub.eventbus import bus, EVENT_SITE_INIT
+from papihub.manager.sitemanager import SiteManager
+
+_LOGGER = logging.getLogger(__name__)
 
 
-@site_init_signal.connect
+@bus.on(EVENT_SITE_INIT)
 def on_site_init(site_id: str):
-    print(site_id)
-    # todo 初始化站点，比如登录，获取cookie等。检查有效性后，更新站点状态为正常
+    _LOGGER.info("站带初始化事件：%s", site_id)
+    site_manager = inject.instance(SiteManager)
+    site_manager.init_site(site_id)
