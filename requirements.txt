@@ -9,3 +9,4 @@ dataclasses-json
 inject
 event-bus
 emoji==2.2.0
+pydantic
