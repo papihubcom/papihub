@@ -1,3 +1,6 @@
+"""
+程序内产生的自定义异常
+"""
 class PapiHubException(Exception):
     pass
 

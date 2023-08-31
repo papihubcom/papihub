@@ -21,6 +21,14 @@ class SiteManager:
         self.parser_config = site_parser_config_loader.load()
 
     def add(self, site_id: str, auth_type: AuthType, auth_config: AuthConfig):
+        """
+        添加站点配置信息
+        配置会存储在数据库内，方便后期加载到程序
+        :param site_id: 站点唯一编号
+        :param auth_type: 授权类型
+        :param auth_config: 授权详细配置
+        :return:
+        """
         if site_id not in self.parser_config:
             raise NotFoundParserException(f'站点编号不存在：{site_id}')
         parser_config = self.parser_config[site_id]
@@ -39,6 +47,12 @@ class SiteManager:
         bus.emit(EVENT_SITE_INIT, site_id=site_id, threads=True)
 
     def init_site(self, site_id: str):
+        """
+        初始化站信息
+        初始化后会将状态同步存储到数据库内
+        :param site_id: 站点唯一编号
+        :return:
+        """
         site_model = SiteModel.get_by_site_id(site_id)
         if not site_model:
             site_model.site_status = SiteStatus.Error.value

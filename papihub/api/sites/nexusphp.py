@@ -227,7 +227,7 @@ class NexusPhp(TorrentSite, Auth):
     def auth_with_cookies(self, cookies_str: str):
         self._set_auth_cookies(cookies_str)
 
-    def auth(self, username: str, password: str):
+    def auth(self, username: str, password: str) -> str:
         with httpx.Client(
                 headers=self.auth_headers,
                 cookies=self.auth_cookies,

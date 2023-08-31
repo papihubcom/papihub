@@ -9,6 +9,9 @@ from papihub.utils import trans_size_str_to_mb
 
 @dataclass
 class ApiOptions:
+    """
+    接口设置
+    """
     request_timeout: Optional[int] = None
     proxies: Optional[str] = None
     user_agent: Optional[str] = None
@@ -16,6 +19,9 @@ class ApiOptions:
 
 @dataclass
 class TorrentSiteUser:
+    """
+    种子站点用户信息
+    """
     uid: Optional[int] = 0
     username: Optional[str] = 'unknown'
     user_group: Optional[str] = 'unknown'
@@ -61,6 +67,9 @@ class TorrentSiteUser:
 
 @dataclass
 class CateLevel1(str, Enum):
+    """
+    种子一级分类信息
+    """
     Movie = '电影'
     TV = '剧集'
     Documentary = '纪录片'
@@ -80,6 +89,9 @@ class CateLevel1(str, Enum):
 
 @dataclass
 class Torrent:
+    """
+    种子信息（来自列表页）
+    """
     # 站点编号
     site_id: Optional[str] = None
     # 种子编号
@@ -122,6 +134,9 @@ class Torrent:
 
 @dataclass
 class TorrentDetail:
+    """
+    种子详情页信息
+    """
     site_id: Optional[str] = None
     name: Optional[str] = None
     subject: Optional[str] = None

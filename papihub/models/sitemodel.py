@@ -62,10 +62,22 @@ class SiteModel(BaseDBModel):
 
     @staticmethod
     def get_by_site_id(site_id: str) -> "SiteModel":
+        """
+        根据站点唯一编号获取站点信息
+        :param site_id:
+        :return:
+        """
         return SiteModel.query().filter(SiteModel.site_id == site_id).first()
 
     @staticmethod
     def update_status(site_id: str, status: SiteStatus, message: Optional[str] = None):
+        """
+        更新站点状态
+        :param site_id: 站点唯一编号
+        :param status: 状态码
+        :param message: 状态相关消息
+        :return:
+        """
         site = SiteModel.get_by_site_id(site_id)
         if site:
             site.site_status = status.value

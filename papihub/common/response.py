@@ -4,6 +4,12 @@ from typing import Union
 
 
 def json_200(data: Union[bool, list, dict, str, None] = None, message: Union[str, None] = None) -> Response:
+    """
+    返回http_status=200的结果
+    :param data: 返回结果
+    :param message: 消息
+    :return:
+    """
     if not message:
         message = "success"
     return JSONResponse(
@@ -18,6 +24,12 @@ def json_200(data: Union[bool, list, dict, str, None] = None, message: Union[str
 
 
 def json_500(data: Union[bool, list, dict, str, None] = None, message: Union[str, None] = None) -> Response:
+    """
+    返回http_status=500的结果
+    :param data: 返回结果
+    :param message: 消息
+    :return:
+    """
     if not message:
         message = "success"
     return JSONResponse(

@@ -16,5 +16,10 @@ class CookieStoreModel(BaseDBModel):
 
     @staticmethod
     def get_cookies(site_id: str) -> Optional["CookieStoreModel"]:
+        """
+        根据站点唯一编号获取存储的cookie信息，只返回首条结果
+        :param site_id:
+        :return:
+        """
         return CookieStoreModel.query().filter(
             (CookieStoreModel.site_id == site_id) & (CookieStoreModel.expire_time > datetime.datetime.now())).first()

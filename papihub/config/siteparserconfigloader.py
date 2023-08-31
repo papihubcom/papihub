@@ -18,6 +18,10 @@ class SiteParserConfigLoader:
         self.conf_path = conf_path
 
     def load(self) -> Dict[str, ParserConfig]:
+        """
+        加载配置目录的所有站点适配文件
+        :return:
+        """
         if not self.conf_path:
             return {}
         parse_configs = {}

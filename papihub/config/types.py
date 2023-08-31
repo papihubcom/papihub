@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 @dataclass
 class ParserConfig:
+    """
+    站点解析配置文件，也可以成为站点适配文件
+    """
     config_type: Optional[str] = None
     # 站点编号
     site_id: Optional[str] = None
@@ -19,6 +22,9 @@ class ParserConfig:
 
 @dataclass
 class TorrentSiteParserConfig(ParserConfig):
+    """
+    种子站点特有的配置信息
+    """
     login: Optional[Dict] = None
     # 站点类目映射
     category_mappings: Optional[List[Dict]] = None

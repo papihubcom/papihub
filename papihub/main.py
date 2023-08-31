@@ -1,3 +1,6 @@
+"""
+程序启动入口类
+"""
 import logging.config
 import os
 
@@ -21,16 +24,22 @@ from papihub.tasks import *
 
 log = logging.getLogger(__name__)
 
+# 初始化ORM框架
 create_all()
 
 app = FastAPI()
 
+# 加载所有fastapi的接口路由
 app.include_router(torrentsroute.router)
 app.include_router(siteroute.router)
 
 
 @app.get("/")
 async def root():
+    """
+    默认首页
+    :return:
+    """
     return json_200(message='papihub server')
 
 
@@ -48,11 +57,18 @@ async def universal_exception_handler(request, exc):
 
 
 def config(binder):
+    """
+    依赖注入机制的初始化
+    所有通过inject使用的对象，需要提前再此绑定
+    :param binder:
+    :return:
+    """
     loader = SiteParserConfigLoader(conf_path=os.path.join(os.environ.get('WORKDIR'), 'conf', 'parser'))
     binder.bind(SiteParserConfigLoader, loader)
     binder.bind(SiteManager, SiteManager(loader))
 
 
 if __name__ == "__main__":
+    # 加载公共全局依赖
     inject.configure(config)
     uvicorn.run(app, host="0.0.0.0", port=os.environ.get("WEB_PORT", 8000))

@@ -11,6 +11,9 @@ router = APIRouter()
 
 
 class AddParam(BaseModel):
+    """
+    添加站点接口的参数
+    """
     site_id: str
     auth_type: str
     auth_config: dict
@@ -18,6 +21,11 @@ class AddParam(BaseModel):
 
 @router.post("/api/site/add")
 def add(param: AddParam):
+    """
+    添加站点信息到数据库
+    :param param:
+    :return:
+    """
     site_manager = inject.instance(SiteManager)
     auth_type = AuthType.from_str(param.auth_type)
     auth_config = None

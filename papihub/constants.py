@@ -1,3 +1,6 @@
+"""
+常量信息类
+"""
 from papihub.api.types import CateLevel1
 
 # 默认所有种子搜索的一级分类

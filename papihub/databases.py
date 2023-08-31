@@ -1,3 +1,6 @@
+"""
+与数据库有关的操作类
+"""
 import datetime
 import os
 
@@ -7,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from papihub import utils
 
+# WORKDIR环境变量文件夹内的db目录，为数据库文件存放目录
 db_path = os.path.join(os.environ.get('WORKDIR', os.path.dirname(os.path.abspath(__file__))), 'db')
 if not os.path.exists(db_path):
     os.makedirs(db_path)
@@ -17,10 +21,18 @@ Base = declarative_base()
 
 
 def create_all():
+    """
+    自动初始化数据库引擎和ORM框架
+    会自动生成模型定义的结构为数据表
+    :return:
+    """
     Base.metadata.create_all(engine)
 
 
 class BaseDBModel(Base):
+    """
+    数据表基类，每张表的模型类继承此类
+    """
     __abstract__ = True
     __table_args__ = {'extend_existing': True}
     gmt_create = Column(DateTime, nullable=False, default=datetime.datetime.now)
