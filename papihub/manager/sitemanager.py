@@ -5,7 +5,7 @@ from papihub.api.sites.nexusphp import NexusPhp
 from papihub.api.torrentsite import TorrentSite
 from papihub.config.siteparserconfigloader import SiteParserConfigLoader
 from papihub.eventbus import bus, EVENT_SITE_INIT
-from papihub.exceptions import NotFoundParserException, ParserException
+from papihub.exceptions import NotFoundParserException, ParserException, SiteAuthenticationFailureException
 from papihub.models import CookieStoreModel
 from papihub.models.sitemodel import AuthType, AuthConfig, SiteModel, SiteStatus, CookieAuthConfig, UserAuthConfig
 
@@ -54,26 +54,40 @@ class SiteManager:
             site_model.status_message = f'站点类型不支持：{parser_config.site_type}'
             site_model.update()
             raise ParserException(site_model.status_message)
-        if isinstance(torrent_site, Auth):
-            if site_model.auth_type == AuthType.Cookies.value:
-                auth_config: CookieAuthConfig = CookieAuthConfig.from_json(site_model.auth_config)
-                torrent_site.auth_with_cookies(auth_config.cookies)
-            elif site_model.auth_type == AuthType.UserAuth.value:
-                cookie_store = CookieStoreModel.get_cookies(site_id)
-                # todo 优先cookie登录，失败再重登录
-                auth_config: UserAuthConfig = UserAuthConfig.from_json(site_model.auth_config)
-                cookie_str = torrent_site.auth(auth_config.username, auth_config.password)
-                expire_time = utils.parse_cookies_expire_time(cookie_str)
-                ck_item = CookieStoreModel(
-                    site_id=site_id,
-                    cookies=cookie_str,
-                    expire_time=expire_time
-                )
-                ck_item.save()
-            else:
-                site_model.site_status = SiteStatus.Error.value
-                site_model.status_message = f'站点认证配置错误：{site_model.auth_config}'
-                site_model.update()
-                raise Exception(site_model.status_message)
+
+        try:
+            if isinstance(torrent_site, Auth):
+                if site_model.auth_type == AuthType.Cookies.value:
+                    auth_config: CookieAuthConfig = CookieAuthConfig.from_json(site_model.auth_config)
+                    torrent_site.auth_with_cookies(auth_config.cookies)
+                    torrent_site.test_login()
+                elif site_model.auth_type == AuthType.UserAuth.value:
+                    cookie_store = CookieStoreModel.get_cookies(site_id)
+                    auth = False
+                    if cookie_store:
+                        # 优先用现存cookie授权
+                        torrent_site.auth_with_cookies(cookie_store.cookies)
+                        auth = torrent_site.test_login()
+                    if not auth:
+                        # 如果已有cookie授权失败，使用用户名密码授权
+                        auth_config: UserAuthConfig = UserAuthConfig.from_json(site_model.auth_config)
+                        cookie_str = torrent_site.auth(auth_config.username, auth_config.password)
+                        expire_time = utils.parse_cookies_expire_time(cookie_str)
+                        ck_item = CookieStoreModel(
+                            site_id=site_id,
+                            cookies=cookie_str,
+                            expire_time=expire_time
+                        )
+                        ck_item.save()
+                else:
+                    site_model.site_status = SiteStatus.Error.value
+                    site_model.status_message = f'站点认证配置错误：{site_model.auth_config}'
+                    site_model.update()
+                    raise SiteAuthenticationFailureException(site_id, parser_config.site_name)
+        except Exception as e:
+            site_model.site_status = SiteStatus.Error.value
+            site_model.status_message = f'站点认证配置错误：{str(e)}'
+            site_model.update()
+            raise SiteAuthenticationFailureException(site_id, parser_config.site_name)
         self.parser_instance.update({site_id: torrent_site})
         SiteModel.update_status(site_id, SiteStatus.Active)

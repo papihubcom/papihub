@@ -2,6 +2,13 @@ class PapiHubException(Exception):
     pass
 
 
+class SiteAuthenticationFailureException(PapiHubException):
+    def __init__(self, site_id: str, site_name: str, *args):
+        super().__init__(*args)
+        self.site_id = site_id
+        self.site_name = site_name
+
+
 class ParserException(PapiHubException):
     pass
 

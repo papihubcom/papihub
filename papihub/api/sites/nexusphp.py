@@ -26,6 +26,7 @@ class NexusPhp(TorrentSite, Auth):
     1、此类带有站点登录功能
     2、此类遵循NexusPHP站点分类设计，搜索时会自动找到正确的搜索分类进行搜索
     """
+
     auth_cookies: Optional[Dict[str, str]] = None
     auth_headers: Optional[Dict[str, str]] = None
     _user: Optional[TorrentSiteUser] = None
@@ -375,12 +376,12 @@ class NexusPhp(TorrentSite, Auth):
             raise ParserException(self.parser_config.site_id, self.parser_config.site_name,
                                   f"{self.parser_config.site_name}种子详情页解析失败")
 
-    async def list(self, timeout: Optional[int] = None, cate_level1_list: Optional[List] = None, ) -> List[Torrent]:
+    def list(self, timeout: Optional[int] = None, cate_level1_list: Optional[List] = None, ) -> List[Torrent]:
         if not timeout:
             timeout = self.options.request_timeout
         list_parser = self.parser_config.get_list
         if list_parser:
-            async with httpx.AsyncClient(
+            with httpx.Client(
                     headers=self.auth_headers,
                     cookies=self.auth_cookies,
                     timeout=Timeout(timeout),
@@ -389,7 +390,7 @@ class NexusPhp(TorrentSite, Auth):
                     verify=False
             ) as client:
                 url = f'{self.parser_config.domain}{list_parser.get("path")}'
-                r = await client.get(url)
+                r = client.get(url)
                 text = self._get_response_text(r)
                 if not text:
                     return []
@@ -398,14 +399,14 @@ class NexusPhp(TorrentSite, Auth):
                     self._user = self._parse_user(pq)
                 return self._parse_torrents(pq, context={'userinfo': self._user})
         else:
-            return await self.search(cate_level1_list=cate_level1_list if cate_level1_list else ALL_CATE_LEVEL1,
-                                     timeout=timeout)
+            return self.search(cate_level1_list=cate_level1_list if cate_level1_list else ALL_CATE_LEVEL1,
+                               timeout=timeout)
 
-    async def get_user(self, refresh=False) -> Optional[TorrentSiteUser]:
+    def get_user(self, refresh=False) -> Optional[TorrentSiteUser]:
         url = self.parser_config.user.get('path')
         if not url:
             return
-        async with httpx.AsyncClient(
+        with httpx.Client(
                 headers=self.auth_headers,
                 cookies=self.auth_cookies,
                 http2=False,
@@ -414,17 +415,17 @@ class NexusPhp(TorrentSite, Auth):
                 follow_redirects=True,
                 verify=False
         ) as client:
-            r = await client.get(url)
+            r = client.get(url)
             text = self._get_response_text(r)
             pq = PyQuery(text)
             return self._parse_user(pq)
 
-    async def search(self, keyword: Optional[str] = None,
-                     imdb_id: Optional[str] = None,
-                     cate_level1_list: Optional[List] = None,
-                     free: Optional[bool] = False,
-                     page: Optional[int] = None,
-                     timeout: Optional[int] = None) -> List[Torrent]:
+    def search(self, keyword: Optional[str] = None,
+               imdb_id: Optional[str] = None,
+               cate_level1_list: Optional[List] = None,
+               free: Optional[bool] = False,
+               page: Optional[int] = None,
+               timeout: Optional[int] = None) -> List[Torrent]:
         if not self._search_paths:
             return []
         paths = self._build_search_path(cate_level1_list)
@@ -451,7 +452,7 @@ class NexusPhp(TorrentSite, Auth):
                 query_context['cates'] = self._trans_search_cate_id(p.get('query_cates'))
             uri = p.get('path')
             qs = self._render_querystring(query_context)
-            async with httpx.AsyncClient(
+            with httpx.Client(
                     headers=self.auth_headers,
                     cookies=self.auth_cookies,
                     timeout=Timeout(timeout),
@@ -461,10 +462,10 @@ class NexusPhp(TorrentSite, Auth):
             ) as client:
                 if p.get('method') == 'get':
                     url = f'{self.parser_config.domain}/{uri}?{qs}'
-                    res = await client.get(url)
+                    res = client.get(url)
                 else:
                     url = f'{self.parser_config.domain}/{uri}'
-                    res = await client.post(url, data=qs)
+                    res = client.post(url, data=qs)
                 if not self._is_login(res):
                     raise NotAuthenticatedException(self.parser_config.site_id, self.parser_config.site_name,
                                                     f'{self.parser_config.site_name}未授权，无法访问')
@@ -479,14 +480,14 @@ class NexusPhp(TorrentSite, Auth):
                     total_torrents += torrents
         return total_torrents
 
-    async def download_torrent(self, url, filepath):
+    def download_torrent(self, url, filepath):
         pass
 
-    async def get_detail(self, url) -> Optional[TorrentDetail]:
+    def get_detail(self, url) -> Optional[TorrentDetail]:
         detail_config = self.parser_config.get_detail
         if not detail_config:
             return
-        async with httpx.AsyncClient(
+        with httpx.Client(
                 headers=self.auth_headers,
                 cookies=self.auth_cookies,
                 timeout=Timeout(self.options.request_timeout),
@@ -494,9 +495,22 @@ class NexusPhp(TorrentSite, Auth):
                 follow_redirects=True,
                 verify=False
         ) as client:
-            r = await client.get(url)
+            r = client.get(url)
             text = self._get_response_text(r)
             if not text:
                 return
             pq = PyQuery(text)
             return self._parse_detail(pq)
+
+    def test_login(self):
+        with httpx.Client(
+                headers=self.auth_headers,
+                cookies=self.auth_cookies,
+                timeout=Timeout(self.options.request_timeout) if self.options else None,
+                proxies=self.options.proxies,
+                follow_redirects=False,
+                verify=False
+        ) as client:
+            # nexusphp 都有一个用户首页
+            r = client.get(f'{self.parser_config.domain}/usercp.php')
+            return r.status_code == 200

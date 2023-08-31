@@ -9,3 +9,7 @@ class Auth(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def auth(self, username: str, password: str):
         pass
+
+    @abc.abstractmethod
+    def test_login(self) -> bool:
+        pass
