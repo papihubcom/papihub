@@ -1,5 +1,5 @@
 import MainPageHeader from "@/app/components/layout/header/main-page-header";
-import Button from "@/app/button/button";
+import Button from "@/app/components/button/button";
 import SiteList from "@/app/components/page-sections/site/list";
 
 export const metadata = {

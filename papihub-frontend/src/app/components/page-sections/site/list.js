@@ -1,5 +1,5 @@
 import SiteOptions from "@/app/components/page-sections/site/options";
-import Badge from "@/app/badge/badge";
+import Badge from "@/app/components/badge/badge";
 
 const statusMessage = {
   success: "可用",
