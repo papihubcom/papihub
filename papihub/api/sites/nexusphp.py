@@ -303,6 +303,7 @@ class NexusPhp(TorrentSite, Auth):
                             cid = mid.get('mapping')
             if str(c.get('id')) == str(cid):
                 t.cate_level1 = CateLevel1.get_type(c.get('cate_level1'))
+                break
         t.details_url = item.get('details')
         if t.details_url:
             t.details_url = self.parser_config.domain + t.details_url

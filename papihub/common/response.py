@@ -1,6 +1,13 @@
+import json
+
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, Response
 from typing import Union
+
+from starlette.responses import PlainTextResponse
+
+from papihub.common.customjsonencoder import CustomJSONEncoder
 
 
 def json_200(data: Union[bool, list, dict, str, None] = None, message: Union[str, None] = None) -> Response:
@@ -12,14 +19,21 @@ def json_200(data: Union[bool, list, dict, str, None] = None, message: Union[str
     """
     if not message:
         message = "success"
-    return JSONResponse(
+    if data:
+        if isinstance(data, list):
+            if len(data) > 0 and 'to_dict' in dir(data[0]):
+                data = [i.to_dict() for i in data]
+        elif 'to_dict' in dir(data):
+            data = data.to_dict()
+    return PlainTextResponse(
+        media_type="application/json",
         status_code=status.HTTP_200_OK,
-        content={
+        content=json.dumps({
             'success': True,
             'errorCode': 0,
             'message': message,
             'data': data,
-        }
+        }, cls=CustomJSONEncoder),
     )
 
 

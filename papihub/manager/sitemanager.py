@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from papihub import utils
 from papihub.api.auth import Auth
 from papihub.api.sites.nexusphp import NexusPhp
@@ -19,6 +19,29 @@ class SiteManager:
         self.parser_instance: Dict[str, TorrentSite] = {}
         self.site_parser_config_loader = site_parser_config_loader
         self.parser_config = site_parser_config_loader.load()
+        self.reload_site_instance()
+
+    def reload_site_instance(self):
+        """
+        重新加载站点实例
+        此处加载站点实例暂时不做强制验证，避免应用初始化过慢
+        :return:
+        """
+        site_list = SiteModel.list()
+        if not site_list:
+            return
+        for site in site_list:
+            self.init_site(site.site_id, test_login=False)
+
+    def get_instance(self, site_id: List[str]):
+        """
+        获取站点实例
+        :param site_id: 站点唯一编号
+        :return:
+        """
+        if not site_id:
+            return []
+        return [self.parser_instance.get(s) for s in site_id if self.parser_instance.get(s) is not None]
 
     def add(self, site_id: str, auth_type: AuthType, auth_config: AuthConfig):
         """
@@ -46,11 +69,12 @@ class SiteManager:
         # 异步做后续的处理
         bus.emit(EVENT_SITE_INIT, site_id=site_id, threads=True)
 
-    def init_site(self, site_id: str):
+    def init_site(self, site_id: str, test_login: Optional[bool] = True):
         """
         初始化站信息
         初始化后会将状态同步存储到数据库内
         :param site_id: 站点唯一编号
+        :param test_login: 是否测试登录
         :return:
         """
         site_model = SiteModel.get_by_site_id(site_id)
@@ -74,14 +98,18 @@ class SiteManager:
                 if site_model.auth_type == AuthType.Cookies.value:
                     auth_config: CookieAuthConfig = CookieAuthConfig.from_json(site_model.auth_config)
                     torrent_site.auth_with_cookies(auth_config.cookies)
-                    torrent_site.test_login()
+                    if test_login:
+                        torrent_site.test_login()
                 elif site_model.auth_type == AuthType.UserAuth.value:
                     cookie_store = CookieStoreModel.get_cookies(site_id)
                     auth = False
                     if cookie_store:
                         # 优先用现存cookie授权
                         torrent_site.auth_with_cookies(cookie_store.cookies)
-                        auth = torrent_site.test_login()
+                        if test_login:
+                            auth = torrent_site.test_login()
+                        else:
+                            auth = True
                     if not auth:
                         # 如果已有cookie授权失败，使用用户名密码授权
                         auth_config: UserAuthConfig = UserAuthConfig.from_json(site_model.auth_config)
@@ -102,6 +130,6 @@ class SiteManager:
             site_model.site_status = SiteStatus.Error.value
             site_model.status_message = f'站点认证配置错误：{str(e)}'
             site_model.update()
-            raise SiteAuthenticationFailureException(site_id, parser_config.site_name)
+            raise SiteAuthenticationFailureException(site_id, parser_config.site_name, e)
         self.parser_instance.update({site_id: torrent_site})
         SiteModel.update_status(site_id, SiteStatus.Active)

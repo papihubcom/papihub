@@ -1,3 +1,0 @@
-pyquery==2.0.0
-emoji
-SQLAlchemy==2.0.19

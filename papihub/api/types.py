@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from dataclasses_json import dataclass_json
+
 from papihub import utils
 from papihub.utils import trans_size_str_to_mb
 
@@ -17,6 +19,7 @@ class ApiOptions:
     user_agent: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class TorrentSiteUser:
     """
@@ -65,19 +68,18 @@ class TorrentSiteUser:
         return user
 
 
-@dataclass
 class CateLevel1(str, Enum):
     """
     种子一级分类信息
     """
-    Movie = '电影'
-    TV = '剧集'
-    Documentary = '纪录片'
-    Anime = '动漫'
-    Music = '音乐'
-    Game = '游戏'
-    AV = '成人'
-    Other = '其他'
+    Movie = 'Movie'
+    TV = 'TV'
+    Documentary = 'Documentary'
+    Anime = 'Anime'
+    Music = 'Music'
+    Game = 'Game'
+    AV = 'AV'
+    Other = 'Other'
 
     @staticmethod
     def get_type(enum_name: str) -> Optional["CateLevel1"]:
@@ -87,6 +89,7 @@ class CateLevel1(str, Enum):
         return None
 
 
+@dataclass_json
 @dataclass
 class Torrent:
     """
@@ -132,6 +135,7 @@ class Torrent:
     poster_url: Optional[str] = None
 
 
+@dataclass_json
 @dataclass
 class TorrentDetail:
     """

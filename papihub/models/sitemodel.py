@@ -61,6 +61,14 @@ class SiteModel(BaseDBModel):
     status_message = Column(String, comment='状态信息', nullable=True)
 
     @staticmethod
+    def list() -> List["SiteModel"]:
+        """
+        获取所有站点信息
+        :return:
+        """
+        return SiteModel.query().all()
+
+    @staticmethod
     def get_by_site_id(site_id: str) -> "SiteModel":
         """
         根据站点唯一编号获取站点信息
