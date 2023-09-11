@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, Dict, List
 from papihub import utils
 from papihub.api.auth import Auth
@@ -8,6 +9,8 @@ from papihub.eventbus import bus, EVENT_SITE_INIT
 from papihub.exceptions import NotFoundParserException, ParserException, SiteAuthenticationFailureException
 from papihub.models import CookieStoreModel
 from papihub.models.sitemodel import AuthType, AuthConfig, SiteModel, SiteStatus, CookieAuthConfig, UserAuthConfig
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class SiteManager:
@@ -27,11 +30,13 @@ class SiteManager:
         此处加载站点实例暂时不做强制验证，避免应用初始化过慢
         :return:
         """
+        _LOGGER.info("开始初始化站点配置实例")
         site_list = SiteModel.list()
         if not site_list:
             return
         for site in site_list:
             self.init_site(site.site_id, test_login=False)
+        _LOGGER.info(f"站点配置实例初始化完成，共{len(site_list)}个站点")
 
     def get_instance(self, site_id: List[str]):
         """
@@ -84,6 +89,7 @@ class SiteManager:
             site_model.update()
             raise Exception(site_model.status_message)
         parser_config = self.parser_config[site_id]
+        _LOGGER.info(f'开始初始化站点：{parser_config.site_name}')
         torrent_site: Optional[TorrentSite] = None
         if 'nexusphp' == parser_config.site_type:
             torrent_site = NexusPhp(parser_config)
@@ -96,14 +102,17 @@ class SiteManager:
         try:
             if isinstance(torrent_site, Auth):
                 if site_model.auth_type == AuthType.Cookies.value:
+                    _LOGGER.info(f'使用现有cookie授权：{parser_config.site_name}')
                     auth_config: CookieAuthConfig = CookieAuthConfig.from_json(site_model.auth_config)
                     torrent_site.auth_with_cookies(auth_config.cookies)
                     if test_login:
                         torrent_site.test_login()
                 elif site_model.auth_type == AuthType.UserAuth.value:
+                    _LOGGER.info(f'使用用户名密码授权：{parser_config.site_name}')
                     cookie_store = CookieStoreModel.get_cookies(site_id)
                     auth = False
                     if cookie_store:
+                        _LOGGER.info(f'检测到存在cookie历史，使用现有cookie授权：{parser_config.site_name}')
                         # 优先用现存cookie授权
                         torrent_site.auth_with_cookies(cookie_store.cookies)
                         if test_login:
@@ -111,6 +120,7 @@ class SiteManager:
                         else:
                             auth = True
                     if not auth:
+                        _LOGGER.info(f'使用现有cookie授权失败，采用用户名密码授权：{parser_config.site_name}')
                         # 如果已有cookie授权失败，使用用户名密码授权
                         auth_config: UserAuthConfig = UserAuthConfig.from_json(site_model.auth_config)
                         cookie_str = torrent_site.auth(auth_config.username, auth_config.password)
@@ -133,3 +143,4 @@ class SiteManager:
             raise SiteAuthenticationFailureException(site_id, parser_config.site_name, e)
         self.parser_instance.update({site_id: torrent_site})
         SiteModel.update_status(site_id, SiteStatus.Active)
+        _LOGGER.info(f'站点初始化完成：{parser_config.site_name}')

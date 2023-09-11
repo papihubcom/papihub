@@ -3,14 +3,15 @@
 """
 import logging.config
 import os
+from papihub.common.logging import LOGGING_CONFIG
+
+logging.config.dictConfig(LOGGING_CONFIG)
 
 import inject
 
-from papihub.common.logging import LOGGING_CONFIG
 from papihub.config.siteparserconfigloader import SiteParserConfigLoader
 from papihub.manager.sitemanager import SiteManager
 
-logging.config.dictConfig(LOGGING_CONFIG)
 import httpx
 import uvicorn
 from fastapi import FastAPI
