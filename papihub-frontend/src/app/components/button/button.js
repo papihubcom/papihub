@@ -11,18 +11,21 @@ const colors = {
 }
 export default function Button(
     {
+      type = 'button',
       size = 'medium',
       color = 'primary',
+      className = null,
       children,
     }
 ) {
   return (<button
-      type="button"
+      type={type}
       className={
         classNames(
             colors[color],
             "rounded-md text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-            sizes[size]
+            sizes[size],
+            className
         )
       }
   >
