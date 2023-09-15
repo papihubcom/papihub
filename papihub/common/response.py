@@ -55,3 +55,24 @@ def json_500(data: Union[bool, list, dict, str, None] = None, message: Union[str
             'data': data,
         }
     )
+
+
+def json_with_status(status_code: int, data: Union[bool, list, dict, str, None] = None,
+                     message: Union[str, None] = None) -> Response:
+    """
+    返回自定义statuscode的结果
+    :param data: 返回结果
+    :param message: 消息
+    :return:
+    """
+    if not message:
+        message = "success"
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            'success': False,
+            'errorCode': 1,
+            'message': message,
+            'data': data,
+        }
+    )

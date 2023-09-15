@@ -1,11 +1,13 @@
 import inject
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from papihub.auth import get_current_user
 from papihub.common.response import json_200
 from pydantic import BaseModel
 
 from papihub.manager.sitemanager import SiteManager
 from papihub.models.sitemodel import AuthType, CookieAuthConfig, UserAuthConfig
+from papihub.models.usermodel import UserModel
 
 router = APIRouter()
 
@@ -20,7 +22,7 @@ class AddParam(BaseModel):
 
 
 @router.post("/api/site/add")
-def add(param: AddParam):
+def add(param: AddParam, user: UserModel = Depends(get_current_user)):
     """
     添加站点信息到数据库
     :param param:
