@@ -5,8 +5,34 @@ import FormProvider from "@/app/components/hook-form/form-provider";
 import {useForm} from "react-hook-form";
 import * as Yup from "yup";
 import {yupResolver} from "@hookform/resolvers/yup";
+import useUserStore from "@/auth/store/use-user-store";
+import {useEffect} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
+import {XCircleIcon} from "@heroicons/react/24/solid";
 
 export default function Page() {
+  const router = useRouter();
+  const searchParams = useSearchParams()
+
+  const {
+    login,
+    authenticated,
+    isInitializing,
+    hasError,
+    errorMessage
+  } = useUserStore();
+  useEffect(() => {
+    if (isInitializing) {
+      return;
+    }
+    if (authenticated) {
+      if (searchParams.get("returnTo")) {
+        router.replace(searchParams.get("returnTo"));
+      } else {
+        router.replace('/');
+      }
+    }
+  }, [isInitializing, authenticated, router])
   const LoginSchema = Yup.object().shape({
     username: Yup.string().required('必须填写用户名'),
     password: Yup.string()
@@ -22,7 +48,7 @@ export default function Page() {
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
+    login(data.username, data.password);
   });
   return (<div>
     <div
@@ -37,8 +63,17 @@ export default function Page() {
           登入PapiHub
         </h2>
       </div>
-
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        {hasError && <div className="rounded-md bg-red-50 p-4 mb-2">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true"/>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">{errorMessage}</h3>
+            </div>
+          </div>
+        </div>}
         <FormProvider className="space-y-6" methods={methods}
                       onSubmit={onSubmit}>
           <Input

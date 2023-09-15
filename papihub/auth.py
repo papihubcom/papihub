@@ -1,6 +1,7 @@
+import datetime
 import time
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -32,8 +33,12 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password + PWD_SALT, hashed_password)
 
 
-def create_access_token(data: dict, expires: timedelta = timedelta(minutes=60)) -> str:
-    data = {**data, "exp": time.time() + expires.seconds}
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    if expires_delta:
+        expire = datetime.datetime.now() + expires_delta
+    else:
+        expire = datetime.datetime.now() + timedelta(minutes=60)
+    data = {**data, "exp": expire}
     token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
@@ -48,7 +53,7 @@ def get_current_user(
         headers={"WWW-Authenticate": authenticate_value},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception

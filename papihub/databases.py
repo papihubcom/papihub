@@ -4,6 +4,7 @@
 import datetime
 import os
 
+from dataclasses_json import dataclass_json
 from sqlalchemy import create_engine, Column, DateTime, String, Integer, Text, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
@@ -107,13 +108,15 @@ class BaseDBModel(Base):
             session.rollback()
             raise
 
-    def to_json(self, hidden_fields=None):
+    def to_dict(self, hidden_fields=None):
         """
         Json序列化
         :param hidden_fields: 覆盖类属性 hidden_fields
         :return:
         """
         model_json = {}
+        if not hidden_fields:
+            hidden_fields = self.__hidden_fields__
         if not hidden_fields:
             hidden_fields = []
         for column in self.__dict__:

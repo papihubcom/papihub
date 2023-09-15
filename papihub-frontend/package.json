@@ -14,6 +14,7 @@
     "@hookform/resolvers": "^3.3.1",
     "@tailwindcss/forms": "^0.5.6",
     "autoprefixer": "10.4.14",
+    "axios": "^1.5.0",
     "classnames": "^2.3.2",
     "date-fns": "^2.30.0",
     "eslint": "8.46.0",

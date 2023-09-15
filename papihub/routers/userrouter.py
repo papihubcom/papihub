@@ -1,13 +1,10 @@
-import time
 from datetime import timedelta
-from typing import Optional, Annotated
+from typing import Optional
 
-from fastapi import Depends, FastAPI, HTTPException, status, APIRouter
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
-from jose import JWTError, jwt
+from fastapi import Depends, status, APIRouter
+from fastapi.security import OAuth2PasswordRequestForm
 
-from papihub.auth import create_access_token, verify_password, ACCESS_TOKEN_EXPIRE_MINUTES
+from papihub.auth import create_access_token, verify_password, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 from papihub.common.response import json_with_status, json_200
 from papihub.models.usermodel import UserModel
 
@@ -22,6 +19,11 @@ def auth(username: str, password: str) -> Optional[UserModel]:
     if not verify_password(password, user.password):
         return
     return user
+
+
+@router.get("/api/user/profile")
+def profile(user: UserModel = Depends(get_current_user)):
+    return json_200(data=user)
 
 
 @router.post("/api/user/get_token")

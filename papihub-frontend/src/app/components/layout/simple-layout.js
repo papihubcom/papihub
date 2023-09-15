@@ -1,7 +1,7 @@
 import NavMobile from "@/app/components/nav/mobile/nav-mobile";
 import NavDesktop from "@/app/components/nav/desktop/nav-desktop";
 import Footer from "@/app/components/footer/footer";
-import Link from "next/link";
+import NavUserDesktop from "@/app/components/nav/desktop/nav-user-desktop";
 
 const navigation = [
   {name: '首页', href: '/'},
@@ -30,12 +30,7 @@ export default function SimpleLayout({children}) {
         <div className="hidden lg:flex lg:gap-x-12">
           <NavDesktop data={navigation}/>
         </div>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link href="/auth/login"
-                className="text-sm font-semibold leading-6 text-white">
-            登录 <span aria-hidden="true">&rarr;</span>
-          </Link>
-        </div>
+        <NavUserDesktop/>
       </nav>
 
     </header>
