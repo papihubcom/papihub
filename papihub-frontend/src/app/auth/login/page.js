@@ -79,10 +79,12 @@ export default function Page() {
           <Input
               label="用户名"
               name="username" type="text"
+              className={"w-full"}
           />
           <Input
               label="密码"
               name="password" type="password"
+              className={"w-full"}
               cornerHint={<a href="#"
                              className="font-semibold text-indigo-600 hover:text-indigo-500">
                 忘记密码?

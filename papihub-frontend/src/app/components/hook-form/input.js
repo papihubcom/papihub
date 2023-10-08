@@ -22,7 +22,7 @@ export default function Input({
           name={name}
           control={control}
           render={({field, fieldState: {error}}) => (
-              <div>
+              <div className={"w-full"}>
                 <div className="flex items-center justify-between">
                   <label htmlFor={name}
                          className="block text-sm font-medium leading-6 text-white">
@@ -43,7 +43,7 @@ export default function Input({
                       type={type}
                       className={
                         classNames(
-                            "block w-full rounded-md border-0 py-1.5 bg-white/5 shadow-sm ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6",
+                            "block rounded-md border-0 py-1.5 bg-white/5 shadow-sm ring-1 ring-inset focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6",
                             error
                                 ? "text-red-900 ring-red-300 placeholder:text-red-300 focus:ring-red-500"
                                 : "text-white ring-white/10 focus:ring-indigo-500",

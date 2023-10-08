@@ -104,7 +104,7 @@ def init_biz_data():
         user = UserModel(
             nickname="默认管理员",
             username='admin',
-            password=get_password_hash("admin"),
+            password=get_password_hash("admin123"),
         )
         user.save()
 

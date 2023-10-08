@@ -7,6 +7,7 @@ export const metadata = {
   description: '配置系统内可以抓取访问的站点。',
 }
 export default function Page() {
+
   return (<div>
     <MainPageHeader
         title={"网站配置"}
@@ -20,7 +21,7 @@ export default function Page() {
             href: '#'
           },
         ]}
-        actions={<Button size="small">添加站点</Button>}
+        actions={<Button size="small" href={"/site/add"} >添加站点</Button>}
     />
     <SiteList/>
   </div>)

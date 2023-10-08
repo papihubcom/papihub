@@ -1,4 +1,6 @@
+"use client";
 import classNames from "classnames";
+import {useRouter} from "next/navigation";
 
 const sizes = {
   small: "px-2.5 py-1.5 text-sm",
@@ -15,11 +17,23 @@ export default function Button(
       size = 'medium',
       color = 'primary',
       className = null,
+      href = null,
+      onClick,
       children,
     }
 ) {
+  const router = useRouter();
+  const handleClick = (e) => {
+    if (href) {
+      e.preventDefault();
+      router.push(href);
+    } else if (onClick) {
+      onClick(e);
+    }
+  }
   return (<button
       type={type}
+      onClick={handleClick}
       className={
         classNames(
             colors[color],
