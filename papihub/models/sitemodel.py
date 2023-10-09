@@ -59,6 +59,7 @@ class SiteModel(BaseDBModel):
     auth_config = Column(String, comment='站点认证配置', nullable=False)
     site_status = Column(String, comment='站点状态', nullable=False, default='pending')
     status_message = Column(String, comment='状态信息', nullable=True)
+    last_active_time = Column(DateTime, nullable=False, default=datetime.datetime.now)
 
     @staticmethod
     def list() -> List["SiteModel"]:

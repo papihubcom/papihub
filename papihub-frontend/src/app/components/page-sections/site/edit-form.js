@@ -6,27 +6,63 @@ import Input from "@/app/components/hook-form/input";
 import {RadioGroup} from "@headlessui/react";
 import {CheckCircleIcon} from "@heroicons/react/24/solid";
 import classNames from "classnames";
+import {useAddSite, useListParsers} from "@/service/site-service";
+import {useEffect, useState} from "react";
+import * as Yup from "yup";
+import {yupResolver} from "@hookform/resolvers/yup";
+import Button from "@/app/components/button/button";
+import {useRouter} from "next/navigation";
 
+const authOptions = [{
+  id: 1,
+  label: "Cookies认证",
+  desc: "登录站点后，通过浏览器抓包获取。",
+  value: "cookies"
+}, {
+  id: 2,
+  label: "登录认证",
+  desc: "直接使用用户名密码认证，少量站点支持。",
+  value: "user_auth"
+}];
 export default function SiteEditForm() {
-  const siteOptions = [{label: "馒头", value: "mteam"}];
-  const authOptions = [{
-    id: 1,
-    label: "Cookies认证",
-    desc: "登录站点后，通过浏览器抓包获取。",
-    value: "cookies"
-  }, {
-    id: 2,
-    label: "登录认证",
-    desc: "直接使用用户名密码认证，少量站点支持。",
-    value: "user_auth"
-  }];
+  const router = useRouter();
+  const {data} = useListParsers();
+  const {mutate: addSite, isLoading} = useAddSite();
+  const [siteOptions, setSiteOptions] = useState([]);
+  useEffect(() => {
+    setSiteOptions(data?.data?.map((item) => {
+      return {
+        icon: <img src={`/icons/pt/${item.site_id}.ico`} alt=""
+                   className="h-5 w-5 flex-shrink-0 rounded-full"/>,
+        label: item.site_name,
+        value: item.site_id,
+      }
+    }) || []);
+  }, [data]);
+  const formSchema = Yup.object().shape({
+    authType: Yup.string(),
+    cookies: Yup.string()
+    .when('authType', ([authType], schema) =>
+        authType === 'cookies' ? schema.required('请填写一个有效的Cookies')
+            : schema,
+    ),
+    username: Yup.string()
+    .when('authType', ([authType], schema) =>
+        authType === 'user_auth' ? schema.required('用户名必填') : schema,
+    ),
+    password: Yup.string()
+    .when('authType', ([authType], schema) =>
+        authType === 'user_auth' ? schema.required('密码必填') : schema,
+    ),
+  });
   const methods = useForm({
+    resolver: yupResolver(formSchema),
     defaultValues: {
-      siteId: siteOptions[0],
       authType: authOptions[0].value
     }
   });
   const {
+    setValue,
     watch,
     control,
     register,
@@ -35,8 +71,34 @@ export default function SiteEditForm() {
   } = methods;
   const authType = watch("authType");
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data)
+    const params = {
+      site_id: data.siteId.value,
+      auth_type: data.authType,
+      auth_config: data.authType === "cookies" ? {
+        cookies: data.cookies
+      } : {
+        username: data.username,
+        password: data.password
+      }
+    };
+    console.log(params)
+    addSite(params, {
+      onSuccess: res => {
+        const {success, message, data} = res;
+        if (success) {
+          //todo 提示成功
+          router.push("/site");
+        } else {
+          //todo 提示失败
+        }
+      }
+    });
   });
+  useEffect(() => {
+    if (siteOptions && siteOptions.length > 0) {
+      setValue("siteId", siteOptions[0])
+    }
+  }, [siteOptions])
   return (
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <div className="space-y-4">
@@ -71,8 +133,8 @@ export default function SiteEditForm() {
                                           classNames(
                                               active
                                                   ? 'border-indigo-600 ring-2 ring-indigo-600'
-                                                  : 'border-gray-300',
-                                              'relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none'
+                                                  : 'border-white/10',
+                                              'relative flex cursor-pointer rounded-lg border bg-white/5 p-4 shadow-sm focus:outline-none'
                                           )
                                       }
                                   >
@@ -81,7 +143,7 @@ export default function SiteEditForm() {
                 <span className="flex flex-1">
                   <span className="flex flex-col">
                     <RadioGroup.Label as="span"
-                                      className="block text-sm font-medium text-gray-900">
+                                      className="block text-sm font-medium text-white">
                       {item.label}
                     </RadioGroup.Label>
                     <RadioGroup.Description as="span"
@@ -131,12 +193,9 @@ export default function SiteEditForm() {
         </div>
 
         <div className="mt-6 flex items-center justify-start gap-x-6">
-          <button
-              type="submit"
-              className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-          >
+          <Button type="submit" disabled={isLoading}>
             立即添加
-          </button>
+          </Button>
         </div>
       </FormProvider>)
 }

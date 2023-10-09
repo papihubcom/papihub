@@ -19,6 +19,7 @@ export default function Button(
       className = null,
       href = null,
       onClick,
+      disabled,
       children,
     }
 ) {
@@ -39,6 +40,7 @@ export default function Button(
             colors[color],
             "rounded-md text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
             sizes[size],
+            {"cursor-not-allowed opacity-50": disabled},
             className
         )
       }

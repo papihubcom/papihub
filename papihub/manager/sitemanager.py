@@ -106,7 +106,12 @@ class SiteManager:
                     auth_config: CookieAuthConfig = CookieAuthConfig.from_json(site_model.auth_config)
                     torrent_site.auth_with_cookies(auth_config.cookies)
                     if test_login:
-                        torrent_site.test_login()
+                        if not torrent_site.test_login():
+                            site_model.site_status = SiteStatus.Error.value
+                            site_model.status_message = f'站点认证配置错误：Cookies无效'
+                            site_model.update()
+                            raise SiteAuthenticationFailureException(site_id, parser_config.site_name,
+                                                                     site_model.status_message)
                 elif site_model.auth_type == AuthType.UserAuth.value:
                     _LOGGER.info(f'使用用户名密码授权：{parser_config.site_name}')
                     cookie_store = CookieStoreModel.get_cookies(site_id)
@@ -136,6 +141,8 @@ class SiteManager:
                     site_model.status_message = f'站点认证配置错误：{site_model.auth_config}'
                     site_model.update()
                     raise SiteAuthenticationFailureException(site_id, parser_config.site_name)
+        except SiteAuthenticationFailureException as e:
+            raise e
         except Exception as e:
             site_model.site_status = SiteStatus.Error.value
             site_model.status_message = f'站点认证配置错误：{str(e)}'
